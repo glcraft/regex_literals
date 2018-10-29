@@ -2,17 +2,18 @@
 #ifndef REGEX_LITERAL_FLAGS
 #define REGEX_LITERAL_FLAGS 1
 #endif
+
 #include <regex>
 #include <string>
 #define DEFAULT_REGEX_ENGINE std::regex_constants::ECMAScript
 // Match result with string inside
 template <typename CharT>
-struct match_results_ws: public std::match_results<typename std::basic_string<CharT>::const_iterator>
+struct basic_smatch_string: public std::match_results<typename std::basic_string<CharT>::const_iterator>
 {
 public:
 	using _string = std::basic_string<CharT>;
-	match_results_ws() : std::match_results<typename _string::const_iterator>() {}
-	match_results_ws(_string _s) : std::match_results<typename _string::const_iterator>(), s(_s) {}
+	basic_smatch_string() : std::match_results<typename _string::const_iterator>() {}
+	basic_smatch_string(_string _s) : std::match_results<typename _string::const_iterator>(), s(_s) {}
 	_string& str()
 	{return s;}
 	const _string& str() const
@@ -20,6 +21,12 @@ public:
 protected:
 	_string s;
 };
+
+using smatch_string = basic_smatch_string<char>;
+using wsmatch_string = basic_smatch_string<wchar_t>;
+using u16smatch_string = basic_smatch_string<char16_t>;
+using u32smatch_string = basic_smatch_string<char32_t>;
+
 template <typename CharT>
 struct struct_rm : public std::basic_regex<CharT>
 {
@@ -27,7 +34,7 @@ struct struct_rm : public std::basic_regex<CharT>
     typedef typename _string::const_iterator const_iterator; 
     typedef std::match_results<const CharT *> _cmatch;
 	typedef std::match_results<const_iterator > _smatch;
-	typedef match_results_ws<CharT> _smatch_ws;
+	typedef basic_smatch_string<CharT> _smatch_ws;
 	
     struct_rm(_string str)
     {
@@ -106,12 +113,13 @@ struct struct_rm : public std::basic_regex<CharT>
     }
 private:
 #if REGEX_LITERAL_FLAGS
-	static CharT const *RegexFlagsDetector;
+	inline const CharT* RegexFlagsDetector();
+	//static CharT const *RegexFlagsDetector;
 	bool check_regex_flags(_string& _str, std::regex_constants::syntax_option_type& _flags)
 	{
 		using namespace std;
 		using namespace regex_constants;
-		static const std::basic_regex<CharT> reg(RegexFlagsDetector);
+		static const std::basic_regex<CharT> reg(RegexFlagsDetector());
 		_smatch sm;
 		syntax_option_type flags = static_cast<syntax_option_type>(0);
 		syntax_option_type engine = DEFAULT_REGEX_ENGINE;
@@ -167,8 +175,7 @@ inline namespace literals
 }
 #if REGEX_LITERAL_FLAGS
 template <>
-const char* struct_rm<char>::RegexFlagsDetector = R"(^\/(.*)\/([ibocmEXBAGP]*)$)";
-
+inline const char* struct_rm<char>::RegexFlagsDetector() { return R"(^\/(.*)\/([ibocmEXBAGP]*)$)"; };
 template <>
-const wchar_t* struct_rm<wchar_t>::RegexFlagsDetector = LR"(^\/(.*)\/([ibocmEXBAGP]*)$)";
+inline const wchar_t* struct_rm<wchar_t>::RegexFlagsDetector() { return LR"(^\/(.*)\/([ibocmEXBAGP]*)$)"; };
 #endif
