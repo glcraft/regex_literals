@@ -2,6 +2,9 @@
 #ifndef REGEX_LITERAL_FLAGS
 #define REGEX_LITERAL_FLAGS 1
 #endif
+#define STRINGIZE(x) STRINGIZE2(x)
+#define STRINGIZE2(x) #x
+#define LINE_STRING STRINGIZE(__LINE__)
 
 #include <regex>
 #include <string>
@@ -24,8 +27,8 @@ protected:
 
 using smatch_string = basic_smatch_string<char>;
 using wsmatch_string = basic_smatch_string<wchar_t>;
-//using u16smatch_string = basic_smatch_string<char16_t>;
-//using u32smatch_string = basic_smatch_string<char32_t>;
+using u16smatch_string = basic_smatch_string<char16_t>;
+using u32smatch_string = basic_smatch_string<char32_t>;
 
 template <typename CharT>
 struct struct_rm : public std::basic_regex<CharT>
@@ -58,15 +61,12 @@ struct struct_rm : public std::basic_regex<CharT>
     }
 
     // Deleted method
-    // r-value string not allowed with smatch ! Use match_results_ws instead to save r-value string.
-    inline bool match(_string&& str, _smatch& sm){
-        static_assert(false, __FILE__":"__LINE__": r-value string not allowed with smatch ! Use match_results_ws instead to save r-value string.");
-    }
+    // To get the match results, we have to get the string reference !
+    // Use match_results_ws instead to get the string into it
+    inline bool match(_string&& str, _smatch& sm) = delete;
     // Deleted method
     // r-value string not allowed with smatch ! Use match_results_ws instead to save r-value string.
-    inline bool search(_string&& str, _smatch& sm){
-        static_assert(false, __FILE__":"__LINE__": r-value string not allowed with smatch ! Use match_results_ws instead to save r-value string.");
-    }
+    inline bool search(_string&& str, _smatch& sm) = delete;
 
     
     inline bool match(_string&& str, _smatch_ws& sm)
@@ -216,3 +216,6 @@ inline const wchar_t* struct_rm<wchar_t>::RegexFlagsDetector() { return LR"(^\/(
 // template <>
 // inline const char32_t* struct_rm<char32_t>::RegexFlagsDetector() { return UR"(^\/(.*)\/([ibocmEXBAGP]*)$)"; };
 #endif
+#undef STRINGIZE
+#undef STRINGIZE2
+#undef LINE_STRING
